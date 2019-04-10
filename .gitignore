@@ -1,32 +1,15 @@
-# Prerequisites
-*.d
+# ignore everything
+/*
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Track the following files
+!iwfm_track.cpp
+!CMakeLists.txt
+!clean.sh
+!README.md
+!.gitignore
+!LICENSE
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+# track the following folder
+!/iwfmHeaders
+/iwfmHeaders/*
+!/iwfmHeaders/*.h
