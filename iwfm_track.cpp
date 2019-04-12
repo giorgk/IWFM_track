@@ -1,5 +1,7 @@
 #include "iwfmHeaders/iwfm_track_options.h"
 #include "iwfmHeaders/iwfmreaders.h"
+#include "iwfmHeaders/cgal_functions.h"
+#include "iwfmHeaders/tracking.h"
 
 // THis will move to a header file later
 #include <osg/Geometry>
@@ -24,15 +26,26 @@ int main(int argc, char *argv[]){
     readStratigraphy(ito.Strat_file, ND);
     readMesh_Flow(ito.GW_ZB_file, MSH, FCELEM);
 
-    std::cout << "GOOD JOB!!" <<std::endl;
+
 
     std::cout << "My CGAL library is " <<  CGAL_VERSION_NR << " (1MMmmb1000)" << std::endl;
     std::cout << std::endl;
     std::cout << "where MM is the major number release, mm is the minor number release, and "
            << "b is the bug fixing number release." << std::endl;
 
+    meshSearch mshSrch(MSH, ND, 3000);
+
+    iwfm_PTrack iwfmtrack(mshSrch,FCELEM);
+    iwfmtrack.set_particles(0,658889.816361, 4193704.600484, 50);
 
 
+
+
+
+
+
+
+    return 0;
 
 
 

@@ -30,6 +30,16 @@ make
 * **[BOOST](https://www.boost.org/)**
 Although boost is a header only library we use [Boost.Program_options](https://www.boost.org/doc/libs/1_69_0/doc/html/program_options.html)  library that requires linking with the library.
 
+* **[EIGEN](http://eigen.tuxfamily.org)**
+Eigen is a header only library and essensially the cmake commands just copy the files to the install directory. Download the latest stable version. At the moment we use version 3.3.7 and extract it to a folder eg. eigen_3_3_7. This is how we "_build_" Eigen:
+```
+cd eigen_3_3_7
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=/path/to/Eigen_install ..
+make install
+```
+
 * **[OpenSceneGraph](http://www.openscenegraph.org/)**
 At the moment this is required. However we may remove or make this optional in the future. The easiest way to build this is to follow [these steps](https://vicrucann.github.io/tutorials/osg-linux-quick-install/). In short, just in case this link won't work, you need to do the following:
 
@@ -51,8 +61,9 @@ cmake -G "Unix Makefiles"
 	    -DCMAKE_BUILD_TYPE=Debug 
 	    -DHDF5_DIR=/path/to/CMake-hdf5-1.10.5/build/_CPack_Packages/Linux/TGZ/HDF5-1.10.5-Linux/HDF_Group/HDF5/1.10.5/share/cmake/hdf5 
 	    -DCGAL_DIR:PATH=/path/to/cgal-releases-CGAL-4.11.3/build/debug 
-	    -DOSG_DIR:PATH=/path/to/OSG/install/prefix .
+	    -DOSG_DIR:PATH=/path/to/OSG/install/folder 
+	    -DEigen3_DIR=/path/to/Eigen_install/share/eigen3/cmake .
 ```
- *Note that the above may has to be one *
+ *Note that the above command has to be one line*
  
  
