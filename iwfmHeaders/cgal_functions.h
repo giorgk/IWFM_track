@@ -17,6 +17,10 @@
 
 #include "iwfmHeaders/iwfmreaders.h"
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+
 
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel                 ine_Kernel;
@@ -29,6 +33,9 @@ typedef CGAL::Polygon_2<ine_Kernel> Polygon_2;
 
 typedef CGAL::Barycentric_coordinates::Mean_value_2<ine_Kernel> Mean_value;
 typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, ine_Kernel> Mean_value_coordinates;
+
+typedef boost::geometry::model::d2::point_xy<double> bst_point;
+typedef boost::geometry::model::polygon<bst_point> bst_poly;
 
 
 void barycentricCoords(std::vector<double> xv, std::vector<double> yv, double x, double y, std::vector<double>& bcoords){
@@ -56,6 +63,18 @@ void barycentricCoords(std::vector<double> xv, std::vector<double> yv, double x,
 }
 
 
+double caclPolyArea(std::vector<double> x, std::vector<double> y){
+    std::vector<bst_point> pnts;
+    for (unsigned int i = 0; i < x.size(); ++i){
+        pnts.push_back(bst_point(x[i], y[i]));
+    }
+    bst_poly poly;
+    boost::geometry::assign_points(poly,pnts);
+    boost::geometry::correct(poly);
+    return boost::geometry::area(poly);
+}
+
+
 
 class meshSearch{
 public:
@@ -71,6 +90,7 @@ private:
     std::vector<std::vector<unsigned int> >& MSH;
     std::map<int, iwfmNode>& ND;
     std::vector<std::vector<double> >invCoef;
+    std::vector<std::vector<std::vector<double> > > MSHarea;
 
     //! A list of the barycenters of the elements
     PointSet2 BCxy;
@@ -101,6 +121,8 @@ void meshSearch::prepare(){
         double cy = 0;
         int nc = 0;
         std::vector<double> xv, yv;
+        std::vector<std::vector<double> > zv;
+        std::vector<std::vector<double> > elemAreas;
         for (unsigned int j = 0; j < MSH[i].size(); ++j){
             if (MSH[i][j] == 0)
                 break;
@@ -111,6 +133,7 @@ void meshSearch::prepare(){
                 nc++;
                 xv.push_back(it->second.X);
                 yv.push_back(it->second.Y);
+                zv.push_back(it->second.Z);
             }
             else {
                 std::cerr << "Node " << MSH[i][j] << " not found in the Node list" << std::endl;
@@ -123,6 +146,30 @@ void meshSearch::prepare(){
         invCoef.push_back(CC);
 
         tempxy.push_back(std::make_pair(ine_Point2(cx, cy), i) );
+        double areaxy = caclPolyArea(xv,yv);
+
+        // calculate the areas
+        for (unsigned int ii = 0; ii < xv.size(); ++ii) {
+            unsigned iii = ii + 1;
+            if (ii == xv.size()-1)
+                iii = 0;
+            double L = std::sqrt((xv[iii] - xv[ii])*(xv[iii] - xv[ii]) + (yv[iii] - yv[ii])*(yv[iii] - yv[ii]));
+            std::vector<double> tempx(4), tempy(4);
+            tempx[0] = 0; tempx[1] = L; tempx[2] = L; tempx[3] = 0;
+            std::vector<double> areas;
+            for (unsigned int jj = 0; jj < zv[0].size()-1; ++jj){
+                tempy[0] = zv[ii][jj];
+                tempy[1] = zv[iii][jj];
+                tempy[2] = zv[iii][jj+1];
+                tempy[3] = zv[ii][jj+1];
+                double area = caclPolyArea(tempx, tempy);
+                areas.push_back(area);
+            }
+            if (ii == 0)
+                areas.push_back(areaxy);
+            elemAreas.push_back(areas);
+        }
+        MSHarea.push_back(elemAreas);
     }
     BCxy.insert(tempxy.begin(), tempxy.end());
 

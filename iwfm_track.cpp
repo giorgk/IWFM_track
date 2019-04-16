@@ -22,9 +22,19 @@ int main(int argc, char *argv[]){
     std::vector<std::vector<unsigned int> > MSH;
     std::vector<std::vector<unsigned int> > FCELEM;
     std::map<int, iwfmNode> ND;
+    std::map<int, std::vector<std::vector<double> > > FCFLOWS;
+    std::map<int, std::vector<std::vector<double> > > VERTFLOWS;
+    std::map<int, std::vector<std::vector<double> > > VERTnodeFLOWS;
+    std::map<int, std::vector<double> > DPERC;
     readNodeCoord(ito.Node_file, ND);
     readStratigraphy(ito.Strat_file, ND);
     readMesh_Flow(ito.GW_ZB_file, MSH, FCELEM);
+    readDeepPercolation(ito.GW_ZB_file, DPERC);
+    readVerticalFlows(ito.GW_ZB_file, VERTnodeFLOWS);
+
+    convertNode2FaceFlow(VERTFLOWS, VERTnodeFLOWS, DPERC, MSH);
+
+    readFaceFlows(ito.GW_ZB_file, FCFLOWS);
 
 
 
