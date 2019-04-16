@@ -234,6 +234,7 @@ bool readFaceFlows(std::string filename,
 void readVerticalFlows(std::string filename, std::map<int, std::vector<std::vector<double> > >& VERTFLOWS){
     const H5std_string FILE_NAME(filename);
     H5::H5File *GWZB_file = new H5::H5File(FILE_NAME, H5F_ACC_RDONLY);
+    //vertFlows [layers][time][vertical flows at each node]
     std::vector< std::vector< std::vector< double > > > vertFlows;
 
     for (unsigned int i = 1; i < 4; ++i){

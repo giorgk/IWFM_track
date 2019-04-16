@@ -2,6 +2,7 @@
 #include "iwfmHeaders/iwfmreaders.h"
 #include "iwfmHeaders/cgal_functions.h"
 #include "iwfmHeaders/tracking.h"
+#include "iwfmHeaders/help_func.h"
 
 // THis will move to a header file later
 #include <osg/Geometry>
@@ -29,6 +30,15 @@ int main(int argc, char *argv[]){
     readNodeCoord(ito.Node_file, ND);
     readStratigraphy(ito.Strat_file, ND);
     readMesh_Flow(ito.GW_ZB_file, MSH, FCELEM);
+
+    std::map<int, std::map<int,int> > NDelem = ElemPerNode(MSH);
+
+    //graph nodeG;
+    //createNodeGraph(MSH,nodeG);
+
+    //std::map<int,int> out = list_connectedNodes(nodeG, 10);
+
+
     readDeepPercolation(ito.GW_ZB_file, DPERC);
     readVerticalFlows(ito.GW_ZB_file, VERTnodeFLOWS);
 
