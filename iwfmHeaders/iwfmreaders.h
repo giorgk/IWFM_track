@@ -9,6 +9,7 @@
 #include <sstream>
 
 #include <H5Cpp.h>
+#include "iwfmHeaders/help_func.h"
 
 
 struct iwfmNode{
@@ -231,7 +232,8 @@ bool readFaceFlows(std::string filename,
     return true;
 }
 
-void readVerticalFlows(std::string filename, std::map<int, std::vector<std::vector<double> > >& VERTFLOWS){
+void readVerticalFlows(std::string filename, std::map<int, std::vector<std::vector<double> > >& VERTFLOWS,
+                       std::vector<std::vector<unsigned int> >& MSH){
     const H5std_string FILE_NAME(filename);
     H5::H5File *GWZB_file = new H5::H5File(FILE_NAME, H5F_ACC_RDONLY);
     //vertFlows [layers][time][vertical flows at each node]
@@ -280,13 +282,38 @@ void readVerticalFlows(std::string filename, std::map<int, std::vector<std::vect
         delete laygroup;
     }
 
-    for (int it = 0; it < vertFlows[0].size(); ++it) {
-        std::vector<std::vector<double> > layflow;
-        for (int ilay = 0; ilay < vertFlows.size(); ++ilay) {
-            layflow.push_back(vertFlows[ilay][it]);
+    std::map<int, std::map<int,int> > Elpernode =  ElemPerNode(MSH);
+    std::map<int, std::map<int,int> >::iterator itnd;
+    //vertFlows [layers][time][vertical flows at each node]
+
+    for (unsigned int itime = 0; itime < vertFlows[0].size(); ++itime){
+        std::cout << itime << std::endl;
+        std::vector<std::vector<double> > vertFaceflows;
+        for (unsigned int ilay = 0; ilay < vertFlows.size(); ++ilay){
+            std::vector<double> layVertFlows;
+            for (unsigned int i = 0; i < MSH.size(); ++i) {
+                double vertQ = 0;
+                for (unsigned int j = 0; j < MSH[i].size(); ++j) {
+                    if (MSH[i][j] == 0)
+                        break;
+                    itnd = Elpernode.find(MSH[i][j]);
+                    if (itnd != Elpernode.end()){
+                        //std::cout << itnd->second.size() << std::end;
+                        vertQ += vertFlows[ilay][itime][MSH[i][j]-1]/static_cast<double>(itnd->second.size());
+                    }
+                    else {
+                        std::cout << "Node " << MSH[i][j] << " was not found in ElemPerNode function called by readVerticalFlows" << std::endl;
+                    }
+
+                }
+                layVertFlows.push_back(vertQ);
+            }
+            vertFaceflows.push_back(layVertFlows);
         }
-        VERTFLOWS.insert(std::pair<int, std::vector<std::vector<double> > >(it, layflow));
+        VERTFLOWS.insert(std::pair<int, std::vector<std::vector<double> > >(itime, vertFaceflows));
     }
+
+
 
     delete GWZB_file;
 }

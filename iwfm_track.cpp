@@ -31,18 +31,10 @@ int main(int argc, char *argv[]){
     readStratigraphy(ito.Strat_file, ND);
     readMesh_Flow(ito.GW_ZB_file, MSH, FCELEM);
 
-    std::map<int, std::map<int,int> > NDelem = ElemPerNode(MSH);
-
-    //graph nodeG;
-    //createNodeGraph(MSH,nodeG);
-
-    //std::map<int,int> out = list_connectedNodes(nodeG, 10);
-
-
+    readVerticalFlows(ito.GW_ZB_file, VERTFLOWS,MSH);
     readDeepPercolation(ito.GW_ZB_file, DPERC);
-    readVerticalFlows(ito.GW_ZB_file, VERTnodeFLOWS);
 
-    convertNode2FaceFlow(VERTFLOWS, VERTnodeFLOWS, DPERC, MSH);
+    //convertNode2FaceFlow(VERTFLOWS, VERTnodeFLOWS, DPERC, MSH);
 
     readFaceFlows(ito.GW_ZB_file, FCFLOWS);
 
