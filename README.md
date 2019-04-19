@@ -45,11 +45,11 @@ At the moment this is required. However we may remove or make this optional in t
 
 ```
 git clone https://github.com/openscenegraph/osg
-git osg
+cd osg
 git checkout tags/OpenSceneGraph-x.y.z
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX:PATH=/path/to/install/OSG
+cmake -DCMAKE_INSTALL_PREFIX:PATH=/path/to/install/OSG ..
 make
 make install
 ```
