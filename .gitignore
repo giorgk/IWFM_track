@@ -9,7 +9,11 @@
 !.gitignore
 !LICENSE
 
-# track the following folder
+# track the following folders
 !/iwfmHeaders
 /iwfmHeaders/*
 !/iwfmHeaders/*.h
+
+!/Rwrkspc
+/Rwrkspc/*
+!/Rwrkspc/*.R
