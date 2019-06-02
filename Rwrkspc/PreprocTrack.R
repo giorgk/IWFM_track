@@ -63,9 +63,11 @@ MSH <- read.table(file = paste0(c2vsim_path, "Preprocessor/C2VSimFG_Elements.dat
 
 print("Calculate element areas...")
 elemArea <- vector(mode = "numeric", length = length(MSH[[1]]))
+bcElem <- matrix(data = 0, nrow = length(MSH[[1]]), ncol = 2)
 for (i in 1:length(MSH[[1]])){
   x <- XY$X[as.integer(c(MSH[i,2:5]))]
   y <- XY$Y[as.integer(c(MSH[i,2:5]))]
+  bcElem[i,] <- c(mean(x), mean(y))
   elemArea[i] <- polyarea(x,y)
 }
 
@@ -313,6 +315,7 @@ hf["geodata/MSH"] <- MSHmat
 hf["geodata/STRAT"] <- STRATmat
 hf["geodata/FI"] <- faceIndex
 hf["geodata/FCEL"] <- FcLm
+hf["geodata/BCEL"] <- bcElem
 h5close(hf)
 #}
 
