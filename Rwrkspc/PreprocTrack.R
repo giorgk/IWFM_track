@@ -1,6 +1,9 @@
 library(h5)
 library(pracma)
 
+setwd("f:/UCDAVIS/IWFM_track/Rwrkspc")
+source("iwfm_funct.R")
+
 # ----------USER input Section---------------
 # c2vsim_path is the main folder where the subfolders such as Preproces, Simulation exist
 c2vsim_path <-"f:/UCDAVIS/C2VSIM_FG_OR/C2Vsim_FG_v2/C2VSimFG-BETA_PublicRelease/"
@@ -286,6 +289,7 @@ for (i in 1:dim(hflow)[2]) {
   }
 }
 
+
 ## ------ Write outputs --------
 ## Convert dataframes to matrices
 XYmat <- matrix(nrow = dim(XY)[1], ncol = 2)
@@ -306,6 +310,9 @@ STRATmat[,3] <- strat$L2
 STRATmat[,4] <- strat$L3
 STRATmat[,5] <- strat$L4
 
+print("Calculate Homographic transformation coefficients...")
+HTCF <- iwfm.calc_MSH_HTC(XYmat, MSHmat)
+
 #if (1 == 0){
 hf <- h5file(name = paste0(output_file, ".h5"), mode = "w")
 hf["flowdata/VFLOW"] <- Vflow
@@ -316,6 +323,7 @@ hf["geodata/STRAT"] <- STRATmat
 hf["geodata/FI"] <- faceIndex
 hf["geodata/FCEL"] <- FcLm
 hf["geodata/BCEL"] <- bcElem
+hf["geodata/HTCF"] <- HTCF
 h5close(hf)
 #}
 

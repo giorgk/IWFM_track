@@ -1,3 +1,5 @@
+# http://www.corrmap.com/features/homography_transformation.php
+
 Xo <- c(5.0115,  0.3571, 6.0253, 8.2834)
 Yo <- c(0.7143,  2.6676, 9.3440, 3.8047)
 Zo <- c(1,1,1,1)
