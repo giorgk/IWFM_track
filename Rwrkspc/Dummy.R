@@ -12,7 +12,7 @@ p <- c(xp,yp,zp)
 
 VV <- iwfm.pntVel(p, tp, D$HFLOW, D$VFLOW, D$FI, D$BC, D$MSH, D$XY, D$STRAT, D$HTCF, simTime)
 
-PN <- iwfm.findNextpoint(p, VV$v, tp, D$HFLOW, D$VFLOW, D$FI, D$BC, D$MSH, D$XY, D$STRAT, D$HTCF, simTime, 5, 1)
+PN <- iwfm.findNextpoint(p, VV$v, tp, D$HFLOW, D$VFLOW, D$FI, D$BC, D$MSH, D$XY, D$STRAT, D$HTCF, simTime, 1*0.4352258*0.5, 1)
 
 Ttp <- iwfm.interpTime(simTime, tp) 
 elid <- iwfm.findElemId(xp, yp, D$BC, D$MSH, D$XY)
@@ -30,6 +30,7 @@ vmag <- sqrt(sum(vtmp^2))
 # http://mathfaculty.fullerton.edu/mathews/n2003/RungeKuttaFehlbergMod.html
 # https://ece.uwaterloo.ca/~dwharder/NumericalAnalysis/14IVPs/rkf45/complete.html
 # http://maths.cnam.fr/IMG/pdf/RungeKuttaFehlbergProof.pdf
+# https://math.okstate.edu/people/yqwang/teaching/math4513_fall11/Notes/rungekutta.pdf
 step_m <- 50 # Step size in meters
 
 # based on the velocity calculate the time needed to travel the step size meters
@@ -91,3 +92,6 @@ iwfm.findNextpoint(p, v, t, HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, simTime, tm_st
 
 
 wells <- read.table(file = "welldata.dat", header = TRUE)
+iwfm.helix(c(824440, 4032279, 30), c(824440, 4032279, -150), 15, 8, 10)
+
+particles <- iwfm.wellParticles(wells, 80, 5, D$MSH, D$XY, D$STRAT, D$BC)

@@ -89,18 +89,31 @@ iwfm.idw_interp <- function(x,y, xv, yv, v, thres = 0.001){
     w <- dst/sum(dst)
   }
   
-  vRet <- vector(mode = "numeric", length = dim(v)[2])
-  for (i in 1:dim(v)[2]) {
-    vRet[i] <- sum(w*v[,i])
+  if (is.null(dim(v))){
+    vRet <- vector(mode = "numeric", length = 1)
+    vRet[1] <- sum(w*v)
   }
+  else{
+    vRet <- vector(mode = "numeric", length = dim(v)[2])
+    for (i in 1:dim(v)[2]) {
+      vRet[i] <- sum(w*v[,i])
+    }
+  }
+  
   return(vRet)
 }
 
 iwfm.calcVel <- function(pu, TM, el, L, HV, ZV, FI){
+  # Check if we are inside a quad or triangle
+  np <- 4
+  if (FI[el,4] == 0){
+    np <- 3
+  }
+  
   # Horizontal Velocity at first time step
-  va <- sign(FI[el,]) * HV[abs(FI[el,]), TM$T1, L$Lay]
+  va <- sign(FI[el,1:np]) * HV[abs(FI[el,1:np]), TM$T1, L$Lay]
   # Horizontal Velocity at second time step
-  vb <- sign(FI[el,]) * HV[abs(FI[el,]), TM$T2, L$Lay]
+  vb <- sign(FI[el,1:np]) * HV[abs(FI[el,1:np]), TM$T2, L$Lay]
   # interpolate between the time steps
   vab <- va*TM$t + vb*(1-TM$t)
   
@@ -123,7 +136,7 @@ iwfm.calcVel <- function(pu, TM, el, L, HV, ZV, FI){
   
   vz <- Vza*TM$t + Vzb*(1-TM$t)
   
-  return(c(vxy,vz))  
+  return(c(vxy,vz)/30)  
 }
 
 iwfm.pntVel <- function(p, t, HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, simTime){
@@ -266,9 +279,17 @@ iwfm.UnitCoords <- function(x,y,cf){
 }
 
 iwfm.Quadinterp <- function(xu, yu, v){
-  vx <- xu*v[2] + (1-xu)*v[4]
-  vy <- (1-yu)*v[1] + yu*v[3]
-  return(c(vx,vy))
+  # Have to check the interpolation that the shape functions correspond to the right sides.
+  # Especially for the triangles
+  if (length(v) == 4){
+    vx <- xu*v[2] + (1-xu)*v[4]
+    vy <- (1-yu)*v[1] + yu*v[3]
+    return(c(vx,vy))
+  } else if (length(v) == 3){
+    vx <- xu*v[1] + sqrt(2)*xu*v[2] + (xu-1)*v[3]
+    vy <- (yu-1)*v[1] + sqrt(2)*yu*v[2] + yu*v[3]
+    return(c(vx,vy))
+  }
 }
 
 iwfm.findNextpoint <- function(p, v, t, HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, simTime, tm_step, tol){
@@ -283,28 +304,32 @@ iwfm.findNextpoint <- function(p, v, t, HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, si
     p3 <- p + (3/8)*tm_step * ((3/32)*k1 + (9/32)*k2)
     VV <- iwfm.pntVel(p3, t+seconds(24*(3/8)*tm_step*3600), HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, simTime)
     if (VV$reas == "outNO"){
+      k3 <- VV$v
       # Calculate p4 by taking 12/13 step using a linear combination of k1 - k3
-      p4 <- pinit + (12/13)*tm_step * ((1932/2197)*k1 - (7200/2197)*k2 + (7296/2197)*k3)
-      VV <- iwfm.pntVel(p4, t+seconds(24*(12/13)*t_m*3600), HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, simTime)
+      p4 <- p + (12/13)*tm_step * ((1932/2197)*k1 - (7200/2197)*k2 + (7296/2197)*k3)
+      VV <- iwfm.pntVel(p4, t+seconds(24*(12/13)*tm_step*3600), HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, simTime)
       if (VV$reas == "outNO"){
+        k4 <- VV$v
         # Calculate p5 by taking a full step using a linear combination of k1 - k4
-        p5 <- pinit + (1)*tm_step * ((439/216)*k1 - 8*k2 + (3680/513)*k3 - (845/4104)*k4)
+        p5 <- p + (1)*tm_step * ((439/216)*k1 - 8*k2 + (3680/513)*k3 - (845/4104)*k4)
         VV <- iwfm.pntVel(p5, t+seconds(24*(1)*tm_step*3600), HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, simTime)
         if (VV$reas == "outNO"){
+          k5 <- VV$v
           # Calculate p6 by taking a half step using a linear combination of k1 - k4
-          p6 <- pinit + (1/2)*tm_step * ( -(8/27)*k1 + 2*k2 - (3544/2565)*k3 + (1859/4104)*k4 - (11/40)*k5)
+          p6 <- p + (1/2)*tm_step * ( -(8/27)*k1 + 2*k2 - (3544/2565)*k3 + (1859/4104)*k4 - (11/40)*k5)
           VV <- iwfm.pntVel(p6, t+seconds(24*(1/2)*tm_step*3600), HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, simTime)
           if (VV$reas == "outNO"){
-            yn <- pinit + tm_step * ( (25/216)*k1 + (1408/2565)*k3 + (2197/4101)*k4 - (1/5)*k5)
-            zn <- pinit + tm_step * ( (16/135)*k1 + (6656/12825)*k3 + (28561/56430)*k4 - (9/50)*k5 + (2/55)*k6)
+            k6 <- VV$v
+            yn <- p + tm_step * ( (25/216)*k1 + (1408/2565)*k3 + (2197/4101)*k4 - (1/5)*k5)
+            zn <- p + tm_step * ( (16/135)*k1 + (6656/12825)*k3 + (28561/56430)*k4 - (9/50)*k5 + (2/55)*k6)
             
-            R <- (1/tm_step)*abs(yn - zn)
+            R <- (1/tm_step)*sqrt(sum((zn-yn)^2))
             delta <- 0.84*(tol/R)^(1/4)
             if (R < tol){
-              return(list("p" = zn, "reas" = VV$reas), "sh" = delta*tol )
+              return(list("p" = zn, "reas" = VV$reas, "sh" = delta*tol ))
             }
             else{
-              return(list("p" = NA, "reas" = "Repeat"), "sh" = delta*tol )
+              return(list("p" = NA, "reas" = "Repeat", "sh" = delta*tol ))
             }
           }
           else{
@@ -328,16 +353,59 @@ iwfm.findNextpoint <- function(p, v, t, HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, si
 }
 
 
-iwfm.wellParicles <- function(wells, nlay, pplay, MSH, XY, STRAT, BC){
+iwfm.wellParticles <- function(wells, npart, rd, MSH, XY, STRAT, BC){
+  
+  t <- seq(from = 1, to = npart, by = 1)
+  particles <- list("X" = NA, "Y" = NA, "Z" = NA, "TM" = ISOdate(1900,10,1))
+  
+  sind <- 1
+  eind <- npart
   
   for (iw in 1:dim(wells)[1]) {
     elw <- iwfm.findElemId(wells$X[iw], wells$Y[iw], BC, MSH, XY)
-    xw <- wells$X[iw]
+    xv <- XY[,1][MSH[elw,1:4]]
+    yv <- XY[,2][MSH[elw,1:4]]
+    zv <- STRAT[,1][MSH[elw,1:4][1:4],]
+    gse <- iwfm.idw_interp(wells$X[iw], wells$Y[iw], xv, yv, zv)
+    p1 <- c(wells$X[iw], wells$Y[iw], gse - wells$DWT[iw])
+    p2 <- c(wells$X[iw], wells$Y[iw], p1[3] - wells$SL[iw])
     
+    xu <- rd*cos(t)
+    yu <- rd*sin(t)
+    zu <- t*(1/npart)
+    
+    xu <- xu + wells$X[iw]
+    yu <- yu + wells$Y[iw]
+    zu <- zu*(p1[3] - p2[3]) + p2[3]
+    
+    particles$X[sind:eind] <- xu
+    particles$Y[sind:eind] <- yu
+    particles$Z[sind:eind] <- zu
+    particles$TM[sind:eind] <- ISOdate(wells$YY[iw], wells$MM[iw], wells$DD[iw])
+    
+    sind <- sind + npart
+    eind <- eind + npart
   }
   
-    
+  return(particles)
 }
 
+
+iwfm.trackParticle <- function(prt, D, partOpt ){
+  iter <- 1
+  
+  while (iter < partOpt$MaxIter){
+    
+  }
+}
+
+iwfm.options <- function(){
+  return(
+    list("Step" = 0.2, 
+         "Dir" = -1,
+         "MaxIter" = 1000
+         )
+    )
+}
 
   
