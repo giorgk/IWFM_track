@@ -10,11 +10,14 @@ tp <- ISOdate(2010,5,5)
 
 p <- c(xp,yp,zp)
 
+Ttp <- iwfm.interpTime(simTime, tp)
+VV <- iwfm.calcVxyzRBF(p, Ttp, D$HFLOW, D$VFLOW, D$NRML, D$FACEZ)
+
+
 VV <- iwfm.pntVel(p, tp, D$HFLOW, D$VFLOW, D$FI, D$BC, D$MSH, D$XY, D$STRAT, D$HTCF, simTime)
 
 PN <- iwfm.findNextpoint(p, VV$v, tp, D$HFLOW, D$VFLOW, D$FI, D$BC, D$MSH, D$XY, D$STRAT, D$HTCF, simTime, 1*0.4352258*0.5, 1)
-
-Ttp <- iwfm.interpTime(simTime, tp) 
+Ttp <- iwfm.interpTime(simTime, tp)
 elid <- iwfm.findElemId(xp, yp, D$BC, D$MSH, D$XY)
 lay <- iwfm.findLayer(xp, yp, zp ,elid, D$MSH, D$XY, D$STRAT)
 
@@ -91,7 +94,18 @@ zn <- pinit + t_m * ( (16/135)*k1 + (6656/12825)*k3 + (28561/56430)*k4 - (9/50)*
 iwfm.findNextpoint(p, v, t, HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, simTime, tm_step, tol)
 
 
+# Commands to run particle tracking
 wells <- read.table(file = "welldata.dat", header = TRUE)
-iwfm.helix(c(824440, 4032279, 30), c(824440, 4032279, -150), 15, 8, 10)
-
 particles <- iwfm.wellParticles(wells, 80, 5, D$MSH, D$XY, D$STRAT, D$BC)
+po <- iwfm.options()
+
+# Use average velocity
+D <- iwfm.AverageVelField(ISOdate(2005,10,31), ISOdate(2015,9,30), D, simTime)
+
+iwfm.traceParticles(particles, D, po)
+
+
+p1 <- c(566695.358649, 4413576.717052, 46.243613)
+V1 <- iwfm.pntVel(p1, tp, D$HFLOW, D$VFLOW, D$FI, D$BC, D$MSH, D$XY, D$STRAT, D$HTCF, simTime)
+p2 <- c(566695.808515, 4413575.957847, 46.240942)
+V2 <- iwfm.pntVel(p2, tp, D$HFLOW, D$VFLOW, D$FI, D$BC, D$MSH, D$XY, D$STRAT, D$HTCF, simTime)

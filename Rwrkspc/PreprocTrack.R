@@ -23,8 +23,8 @@ Strat_linesSkip <- 105 # Number of comment lines in the Preprocessor/C2VSimFG_St
 MSH_linesSkip <- 142 # Number of comment lines in the Preprocessor/C2VSimFG_Elements.dat file
 MSH_nRead <-32537 # Number of lines to read after MSH_linesSkip This is equal to the number of elements.
 # Convertion factor. 
-#Assuming that the Flow units are ACFT in the output files we have to multiply by 1233.48 to convert them to m^3
-Flow_CNVRT = 1233.48
+# According to Can the Flow units in the hdf files are in ft^3. we have to multiply by
+Flow_CNVRT = 0.0283168 # to convert them to m^3
 
 ### Read Ascii files
 ## Read coordinate file
@@ -85,6 +85,7 @@ faceElem <- GW_BDGinfo[hfileDataSets[17]]
 # initialize a list of matrices to hold the face areas for each layer
 faceArea = matrix(data = 0, nrow = dim(faceElem)[1], ncol = 4)
 faceIndex = matrix(data = 0L, nrow = dim(MSH)[1], ncol = 4)
+faceZ = matrix(data = 0, nrow = dim(faceElem)[1], ncol = 4)
 
 ## Calculate the face areas and indices for the inner faces of the Mesh
 print("Calculate inner element face areas and indices...")
@@ -135,6 +136,7 @@ for (i in 1:dim(faceElem)[1]){
           for (k in 1:4){
             yv <- c(strat[ia,k+2], strat[ib,k+2], strat[ib,k+1], strat[ia,k+1])
             faceArea[i,k] <- polyarea(xv,yv)
+            faceZ[i,k] <- mean(yv)
           }
           breakThis <- TRUE
           break
@@ -195,6 +197,7 @@ for (i in 1:dim(faceIndex)[1]){
         for (k in 1:4){
           yv <- c(strat[ia,k+2], strat[ib,k+2], strat[ib,k+1], strat[ia,k+1])
           faceArea[elemFCid[1], k] <- polyarea(xv,yv)
+          faceZ[elemFCid[1], k] <- mean(yv)
         }
       }
     } else{
@@ -217,6 +220,7 @@ for (i in 1:dim(faceIndex)[1]){
           for (k in 1:4){
             yv <- c(strat[ia,k+2], strat[ib,k+2], strat[ib,k+1], strat[ia,k+1])
             faceArea[elemFCid[j,1], k] <- polyarea(xv,yv)
+            faceZ[elemFCid[j,1], k] <- mean(yv)
           }
         }
       }
@@ -236,11 +240,13 @@ for (i in 1:length(ids)) {
 }
 
 ## Read deep percolation for the layer 1 vertical flow
+# Positive values means downward movement therefore we negate the values as
+# in the particle tracking negative z ccorresponds to downward movement
 print(paste("reading Vertical flow for layer 1 from: ", hfileDataSets[24]))
 DeepPerc <- GW_BDGinfo[hfileDataSets[24]]
 Vflow <- array(dim = c(dim(DeepPerc)[2], dim(DeepPerc)[1], 4))
 for (i in 1:dim(DeepPerc)[1]) {
-  Vflow[,i,1] <- DeepPerc[i,]*Flow_CNVRT
+  Vflow[,i,1] <- -DeepPerc[i,]*Flow_CNVRT
 }
 
 # The vertical flows are written per node.
@@ -271,7 +277,7 @@ for (i in 1:dim(MSH)[1]){
     velemflow <- velemflow + vertflowNodes[MSH[i,j],,]/as.numeric(NsharedElem[MSH[i,j]])
   }
   for(j in 1:3){
-    Vflow[i,,j+1] <- velemflow[,j]*Flow_CNVRT
+    Vflow[i,,j+1] <- -velemflow[,j]*Flow_CNVRT
   }
 }
 
@@ -287,6 +293,41 @@ for (i in 1:dim(hflow)[2]) {
   for (j in 1:dim(hflow)[3]) {
     hflow[,i,j] <- hflow[,i,j]/faceArea[,j]
   }
+}
+
+# find the point where the velocity is defined and the direction
+print("Calculate flow normals ...")
+NRML <- matrix(nrow = dim(FcLm)[1], ncol = 4)
+for( i in 1:dim(FcLm)[1]){
+  el1 <- FcLm[i,1] # The first element of the face
+  el2 <- FcLm[i,2] # The second element of the face
+  if (el1 == 0){ # if the first element is zero switch the indices
+    el1 <- el2
+    el2 <- 0
+  }
+  
+  fcind <- which(abs(faceIndex[el1,])==i)
+  nd1 <- fcind
+  nd2 <- fcind + 1
+  if ( nd2 == 5 || (nd2 == 4 && MSH$nd4[el1] == 0))
+    nd2 <- 1
+  
+  p1 <- as.numeric((XY[MSH[el1,nd1+1],2:3]))
+  p2 <- as.numeric((XY[MSH[el1,nd2+1],2:3]))
+  pm <- (p1 + p2)/2
+  
+  # Find a 100 m offset from the line
+  off <- (100/sqrt(sum( (p1[2] - p2[2])^2 + (p2[1] - p1[1])^2 )))*c(p1[2] - p2[2], p2[1] - p1[1])
+  
+  if (faceIndex[el1,fcind] > 0){
+    pn <- pm - off
+  }
+  else{
+    pn <- pm + off
+  }
+  # the point pn points to the face flow direction and the vector pm - pn is perpendicular to line p1-p2
+  nrm <- (pn - pm)/100
+  NRML[i,] <- c(pm,nrm)
 }
 
 
@@ -314,6 +355,7 @@ print("Calculate Homographic transformation coefficients...")
 HTCF <- iwfm.calc_MSH_HTC(XYmat, MSHmat)
 
 #if (1 == 0){
+print(paste("Writing data to ", paste0(output_file, ".h5")))
 hf <- h5file(name = paste0(output_file, ".h5"), mode = "w")
 hf["flowdata/VFLOW"] <- Vflow
 hf["flowdata/HFLOW"] <- hflow
@@ -324,6 +366,9 @@ hf["geodata/FI"] <- faceIndex
 hf["geodata/FCEL"] <- FcLm
 hf["geodata/BCEL"] <- bcElem
 hf["geodata/HTCF"] <- HTCF
+hf["geodata/NRML"] <- NRML
+hf["geodata/FACEZ"] <- faceZ
+
 h5close(hf)
 #}
 
