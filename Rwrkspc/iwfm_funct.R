@@ -61,6 +61,7 @@ iwfm.loadData <- function(file){
   HTCF <- hf["geodata/HTCF"]
   NRML <- hf["geodata/NRML"]
   FACEZ <- hf["geodata/FACEZ"]
+  BCZ <- hf["geodata/bcZ"]
 
   # convert the flow data to arrays for faster indexing
   tmpH <- array(dim = dim(HFLOW))
@@ -73,7 +74,8 @@ iwfm.loadData <- function(file){
   }
 
   output <- list("XY" = XY, "MSH" = MSH, "BC" = BC, "STRAT" = STRAT, "FI" = FI, 
-                 "HFLOW" = tmpH, "VFLOW" = tmpV, "HTCF" = HTCF, "NRML" = NRML, "FACEZ" = FACEZ )
+                 "HFLOW" = tmpH, "VFLOW" = tmpV, "HTCF" = HTCF, "NRML" = NRML, 
+                 "FACEZ" = FACEZ, "BCZ" = BCZ )
   h5close(hf)
   return(output)
 }

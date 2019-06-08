@@ -67,11 +67,13 @@ MSH <- read.table(file = paste0(c2vsim_path, "Preprocessor/C2VSimFG_Elements.dat
 print("Calculate element areas...")
 elemArea <- vector(mode = "numeric", length = length(MSH[[1]]))
 bcElem <- matrix(data = 0, nrow = length(MSH[[1]]), ncol = 2)
+bcZ <- matrix(data = 0, nrow = length(MSH[[1]]), ncol = 5)
 for (i in 1:length(MSH[[1]])){
   x <- XY$X[as.integer(c(MSH[i,2:5]))]
   y <- XY$Y[as.integer(c(MSH[i,2:5]))]
   bcElem[i,] <- c(mean(x), mean(y))
   elemArea[i] <- polyarea(x,y)
+  bcZ[i,] <- as.vector(apply(strat[as.integer(c(MSH[i,2:5])),2:6],2,mean))
 }
 
 # Calculate the face areas
@@ -244,7 +246,7 @@ for (i in 1:length(ids)) {
 # in the particle tracking negative z ccorresponds to downward movement
 print(paste("reading Vertical flow for layer 1 from: ", hfileDataSets[24]))
 DeepPerc <- GW_BDGinfo[hfileDataSets[24]]
-Vflow <- array(dim = c(dim(DeepPerc)[2], dim(DeepPerc)[1], 4))
+Vflow <- array(data = 0, dim = c(dim(DeepPerc)[2], dim(DeepPerc)[1], 5))
 for (i in 1:dim(DeepPerc)[1]) {
   Vflow[,i,1] <- -DeepPerc[i,]*Flow_CNVRT
 }
@@ -368,6 +370,7 @@ hf["geodata/BCEL"] <- bcElem
 hf["geodata/HTCF"] <- HTCF
 hf["geodata/NRML"] <- NRML
 hf["geodata/FACEZ"] <- faceZ
+hf["geodata/bcZ"] <- bcZ
 
 h5close(hf)
 #}
