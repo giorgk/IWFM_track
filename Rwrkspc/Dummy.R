@@ -9,9 +9,11 @@ zp <- -30
 tp <- ISOdate(2010,5,5)
 
 p <- c(xp,yp,zp)
+po <- iwfm.options()
 
 Ttp <- iwfm.interpTime(simTime, tp)
-VV <- iwfm.calcVxyzRBF(p, Ttp, D$HFLOW, D$VFLOW, D$NRML, D$FACEZ)
+vxy <- iwfm.calcVxyRBF(p, Ttp, D$HFLOW, D$NRML, D$FACEZ, po$RBFSTD)
+vz <- iwfm.calcVzRBF(p, Ttp, D$VFLOW, D$BC, D$BCZ, po$RBFSTD)
 
 
 VV <- iwfm.pntVel(p, tp, D$HFLOW, D$VFLOW, D$FI, D$BC, D$MSH, D$XY, D$STRAT, D$HTCF, simTime)
@@ -96,13 +98,16 @@ iwfm.findNextpoint(p, v, t, HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, simTime, tm_st
 
 # Commands to run particle tracking
 wells <- read.table(file = "welldata.dat", header = TRUE)
-particles <- iwfm.wellParticles(wells, 80, 5, D$MSH, D$XY, D$STRAT, D$BC)
+particles <- iwfm.wellParticles(wells[4,], 40, 5, D$MSH, D$XY, D$STRAT, D$BC)
 po <- iwfm.options()
+po$Step <- 10
+po$MaxStep <- 500
+po$MinStep <- 1
 
 # Use average velocity
 D <- iwfm.AverageVelField(ISOdate(2005,10,31), ISOdate(2015,9,30), D, simTime)
 
-iwfm.traceParticles(particles, D, po)
+strm <- iwfm.traceParticles(particles, D, po)
 
 
 p1 <- c(566695.358649, 4413576.717052, 46.243613)

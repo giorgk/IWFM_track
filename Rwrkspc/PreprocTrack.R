@@ -16,7 +16,7 @@ results_path <- paste0(c2vsim_path, "Results/")
 output_file <- "f:/UCDAVIS/IWFM_track/Rwrkspc/PartTrackData" 
 
 # That's all as far as inputs is concerned. 
-# However there are some values that have their default values may not work:
+# However there are some values that their default values may not work:
 ND_linesSkip <- 90 # Number of comment lines in the Preprocessor/C2VSimFG_Nodes.dat file.
 ND_nRead <-30179 # Number of lines to read after ND_linesSkip. This is equal to the number of nodes.
 Strat_linesSkip <- 105 # Number of comment lines in the Preprocessor/C2VSimFG_Stratigraphy.dat file.

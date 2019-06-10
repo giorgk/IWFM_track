@@ -107,43 +107,50 @@ iwfm.idw_interp <- function(x,y, xv, yv, v, thres = 0.001){
   return(vRet)
 }
 
+iwfm.calcVzRBF <- function(p, TM, ZV, BC, BCZ, S){
+  XYdif <- repmat((BC[,1] - p[1])^2 + (BC[,2] - p[2])^2, dim(BCZ)[2], 1)
+  Zdif <- array( (BCZ[,] - p[3])^2, dim = c(dim(BCZ)[1]*dim(BCZ)[2],1) )
+  
+  w <- exp(- ( XYdif/(2*S$XY^2) + Zdif/(2*S$Z^2)) )
+  sumw <- sum(w)
 
-iwfm.calcVxyzRBF <- function(p, TM, HV, ZV, NRML, FCZ){
-  XYdif <- repmat((NRML[,1] - p[1])^2 + (NRML[,2] - p[2])^2, 4,1)
+  if (length(dim(ZV)) == 3){
+    va <- ZV[, TM$T1, ]
+    vb <- ZV[, TM$T2, ]
+    vab <- va*TM$t + vb*(1-TM$t)
+    vab <- array(vab, dim = c(dim(vab)[1]*dim(vab)[2],1) )
+  }else if (length(dim(ZV)) == 2){
+    vab <- array( ZV[,], dim = c(dim(ZV)[1]*dim(ZV)[2],1) )
+  }
+  vab <- c(vab, matrix(data = 0, nrow = dim(BCZ)[1], ncol = 1))
+
+  return( sum(w*vab)/sumw )
+}
+
+
+iwfm.calcVxyRBF <- function(p, TM, HV, NRML, FCZ, S){
+  XYdif <- repmat((NRML[,1] - p[1])^2 + (NRML[,2] - p[2])^2, dim(FCZ)[2], 1)
   Zdif <- array( (FCZ[,] - p[3])^2, dim = c(dim(FCZ)[1]*dim(FCZ)[2],1) )
   
-  sxy <- 5000
-  sz <- 100
-  
-  w <- exp(- ( XYdif/(2*sxy^2) + Zdif/(2*sz^2)) ) 
+  w <- exp(- ( XYdif/(2*S$XY^2) + Zdif/(2*S$Z^2)) ) 
   
   sumw <- sum(w)
+  
   if (length(dim(HV)) == 3){
     va <- HV[, TM$T1, ]
     vb <- HV[, TM$T2, ]
     vab <- va*TM$t + vb*(1-TM$t)
     vab <- array(vab, dim = c(dim(vab)[1]*dim(vab)[2],1) )
-    
-    vza <- ZV[,TM$T1,]
-    vzb <- ZV[,TM$T2,]
-    vzab <- vza*TM$t + vzb*(1-TM$t)
-    vzab <- array(vzab, dim = c(dim(vzab)[1]*dim(vzab)[2],1) )
-    
-    
   }else if (length(dim(HV)) == 2){
     vab <- array( HV[,], dim = c(dim(HV)[1]*dim(HV)[2],1) )
-    vzab <- array( ZV[,], dim = c(dim(ZV)[1]*dim(ZV)[2],1) )
   }
-  vz <- sum(w*vzab)/sumw
-  
-  nx <- sum(w*NRML[,3])/sumw
-  ny <- sum(w*NRML[,4])/sumw
-  
-   
-  
+
+  nx <- sum(w*repmat(NRML[,3], dim(FCZ)[2], 1 ) )/sumw
+  ny <- sum(w*repmat(NRML[,4], dim(FCZ)[2], 1 ) )/sumw
+
   nxy <- c(nx,ny)/sqrt((nx^2+ny^2))
-  vxy <- ((w*vab)/sumw)*nxy
-  return(c(vxy, vz))
+
+  return( (sum(w*vab)/sumw)*nxy )
 }
 
 iwfm.calcVz <- function(pz, el, L, TM, ZV){
@@ -238,6 +245,14 @@ iwfm.calcVel <- function(p, TM, el, L, HV, ZV, FI, cf){
   
 
   return(c(vxy,vz)/30)
+}
+
+iwfm.pntVelRBF <- function(p, TM, D, simTime, po){
+ 
+  v1xy <- iwfm.calcVxyRBF(p, TM, D$HFLOW, D$NRML, D$FACEZ, po$RBFSTD)
+  v2z <- iwfm.calcVzRBF(p, TM, D$VFLOW, D$BC, D$BCZ, po$RBFSTD)
+  return(c(v1xy,v2z))
+
 }
 
 iwfm.pntVel <- function(p, t, HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, simTime){
@@ -410,7 +425,59 @@ iwfm.Quadinterp <- function(xu, yu, v){
   }
 }
 
-
+iwfm.findNextpointRBF <- function(p,v, t, D, po, dist_step, simTime){
+  
+  tm_step <- dist_step/sqrt(sum(v^2))
+  
+  d <- sign(po$Dir)
+  
+  k1 <- d*v
+  
+  # Calculate p2 by taking 1/4 step using the velocity K1
+  p2 <- p + (1/4) * tm_step * k1
+  t2 <- t +  d*seconds(24*(1/4)*tm_step*3600)
+  k2 <- d*iwfm.pntVelRBF(p2,t2,D,simTime,po)
+  
+  # Calculate p3 by taking 3/8 step using a linear combination of velocities k1 and k2
+  p3 <- p + (3/8)*tm_step * ((3/32)*k1 + (9/32)*k2)
+  t3 <- t + d*seconds(24*(3/8)*tm_step*3600)
+  k3 <- d*iwfm.pntVelRBF(p3,t3,D,simTime,po)
+  
+  # Calculate p4 by taking 12/13 step using a linear combination of k1 - k3
+  p4 <- p + (12/13)*tm_step * ((1932/2197)*k1 - (7200/2197)*k2 + (7296/2197)*k3)
+  t4 <- t + d*seconds(24*(12/13)*tm_step*3600)
+  k4 <- d*iwfm.pntVelRBF(p4,t4,D,simTime,po)
+  
+  # Calculate p5 by taking a full step using a linear combination of k1 - k4
+  p5 <- p + (1)*tm_step * ((439/216)*k1 - 8*k2 + (3680/513)*k3 - (845/4104)*k4)
+  t5 <- t + d*seconds(24*(1)*tm_step*3600)
+  k5 <- d*iwfm.pntVelRBF(p5,t5,D,simTime,po)
+  
+  # Calculate p6 by taking a half step using a linear combination of k1 - k4
+  p6 <- p + (1/2)*tm_step * ( -(8/27)*k1 + 2*k2 - (3544/2565)*k3 + (1859/4104)*k4 - (11/40)*k5)
+  t6 <- t + d*seconds(24*(1/2)*tm_step*3600)
+  k6 <- d*iwfm.pntVelRBF(p6,t6,D,simTime,po)
+  
+  # Calculate two approximations of the next point using different combinations of velocities
+  yn <- p + tm_step * ( (25/216)*k1 + (1408/2565)*k3 + (2197/4101)*k4 - (1/5)*k5)
+  zn <- p + tm_step * ( (16/135)*k1 + (6656/12825)*k3 + (28561/56430)*k4 - (9/50)*k5 + (2/55)*k6)
+  
+  
+  
+  R <- (1/tm_step)*sqrt(sum((zn-yn)^2))
+  
+  if (is.nan(R)){
+    return(list("p" = NA, "Status" = "Repeat", "sh" = 0.5 ))
+  }
+  
+  delta <- 0.84*(po$Tolerance/R)^(1/4)
+  if (R < po$Tolerance){
+    return(list("p" = zn, "Status" = "OK", "sh" = delta*po$Tolerance ))
+  }
+  else{
+    return(list("p" = NA, "Status" = "Repeat", "sh" = delta*tol ))
+  }
+}
 
 
 iwfm.findNextpoint <- function(p, v, t, HV, ZV, FI, BC, MSH, XY, STRAT, HTCF, simTime, tm_step, tol, drct){
@@ -524,13 +591,108 @@ iwfm.wellParticles <- function(wells, npart, rd, MSH, XY, STRAT, BC){
 
 iwfm.traceParticles <- function(prt, D, po = iwfm.options(), simTime = iwfm.SimTime()){
 
-  streamline <- iwfm.calcStreamline(particles[1,3:6], D, po, simTime)
+  #streamline <- iwfm.calcStreamline(particles[1,3:6], D, po, simTime)
+  #streamline <- iwfm.calcStreamlineRBF(particles[1,3:6], D, po, simTime)
   
-  #for (i in 1:dim(prt)[1]) {
-  #  streamline <- iwfm.calcStreamline(particles[i,3:6], D, po, simTime)
-  #  a<-1
-  #}
+  cnt <- 1
+  for (i in 1:dim(prt)[1]) {
+    print(i)
+    streamline <- iwfm.calcStreamlineRBF(prt[i,3:6], D, po, simTime, cnt)
+    
+    if (i == 1){
+      strmlns <- data.frame(prt$Eid[i], prt$Sid[i], list("STRM" = streamline))
+      names(strmlns) <- c("Eid", "Sid", "CNT", "X", "Y", "Z", "TM", "Exit")
+    }else{
+      df <- data.frame(prt$Eid[i], prt$Sid[i], list("STRM" = streamline))
+      names(df) <- c("Eid", "Sid", "CNT", "X", "Y", "Z", "TM", "Exit")
+      strmlns <- rbind(strmlns,df)
+    }
+    cnt <- strmlns$CNT[length(strmlns$CNT)] + 1
+  }
+  
+  return(strmlns)
 }
+
+
+iwfm.checkPoint <- function(p, BC, MSH, XY, STRAT){
+  elid <- iwfm.findElemId(p[1], p[2], BC, MSH, XY)
+  if (elid < 0){
+    return(list("Status" = "outDomain"))
+  }
+  else{
+    lay <- iwfm.findLayer(p[1], p[2], p[3] ,elid, MSH, XY, STRAT)
+    if (lay$Lay == 0){
+      return(list("Status" = "outTop"))
+    } else if (lay$Lay == -9){
+      return(list("Status" = "outBot"))
+    }
+    else{
+      return( list("Status" = "IN", "ElId" = elid, "Lay" = lay) )
+    }
+  }
+}
+
+iwfm.calcStreamlineRBF <- function(prt, D, po, simTime, cnt ){
+  iter <- 1
+  pos <- 1
+  timeStep <- po$Step
+  
+  stepIncrease <- TRUE
+  prt <- data.frame(cnt, as.numeric(prt[1,1]), as.numeric(prt[1,2]), as.numeric(prt[1,3]), prt$TM[pos])
+  names(prt) <- c("CNT", "X", "Y", "Z", "TM")
+  
+  chck <- iwfm.checkPoint(c(as.numeric(prt[1,2]), as.numeric(prt[1,3]), as.numeric(prt[1,4])), D$BC, D$MSH, D$XY, D$STRAT)
+  if (chck$Status != "IN")
+    return(list("STRMLN" = prt, "Exit" = chck$Status))
+  
+  
+  while (iter < po$MaxIter){
+    #print(iter)
+    p <- c(as.numeric(prt[pos,2]), as.numeric(prt[pos,3]), as.numeric(prt[pos,4]))
+    TM <- iwfm.interpTime(simTime, prt[pos,4])
+    if ((TM$T1 == -10000 || TM$T1 == 10000) && length(dim(D$HFLOW)) == 3){
+      return(list("STRMLN" = prt, "Exit" = "outTime"))
+    }
+
+    v <- iwfm.pntVelRBF(p, TM, D, simTime, po)
+    PN <- iwfm.findNextpointRBF(p,v, prt[pos,4], D, po, timeStep, simTime)
+    
+    if (PN$Status == "Repeat"){
+      timeStep <- timeStep*PN$sh
+    }else{
+      chck <- iwfm.checkPoint(PN$p, D$BC, D$MSH, D$XY, D$STRAT)
+      if (chck$Status == "IN" ){
+        cnt <- cnt + 1
+        df <- data.frame(cnt, PN$p[1], PN$p[2], PN$p[3], prt$TM[pos] + sign(po$Dir)*seconds(24*timeStep*3600))
+        names(df) <- c("CNT", "X", "Y", "Z", "TM")
+        prt <- rbind(prt,df)
+        pos <- pos +1
+        if (stepIncrease)
+          timeStep <- min(po$MaxStep, timeStep*PN$sh)
+      }
+      else{
+        if (chck$Status == "outTop"){
+          if (timeStep < po$MinStep){
+            cnt <- cnt + 1
+            df <- data.frame(cnt, p[1], p[2], p[3], prt$TM[pos] + sign(po$Dir)*seconds(24*timeStep*3600))
+            names(df) <- c("CNT", "X", "Y", "Z", "TM")
+            prt <- rbind(prt,df)
+            return(list("STRMLN" = prt, "Exit" = chck$Status))
+          }
+          else{
+            stepIncrease <- FALSE
+            timeStep <- timeStep/2
+          }
+        }
+      }
+    }
+    iter <- iter + 1
+  }
+  return(list("STRMLN" = prt, "Exit" = "outIter"))
+}
+
+
+
 
 iwfm.calcStreamline <- function(prt, D, po, simTime ){
   iter <- 1
@@ -579,10 +741,11 @@ iwfm.options <- function(){
     list(
          "Dir" = -1,
          "MaxIter" = 1000,
-         "Step" = 1000,
-         "MaxStep" = 10000,
+         "Step" = 10,
+         "MaxStep" = 500,
          "MinStep" = 1,
-         "Tolerance" = 1
+         "Tolerance" = 1,
+         "RBFSTD" = list("XY" = 5000, "Z" = 100)
          )
     )
 }
@@ -601,4 +764,15 @@ iwfm.AverageVelField <- function(startDate, endDate, D, simTime){
   return(D)
 }
 
+iwfm.sourceOutline <- function(wellid, strmln){
+  sid <- unique(strmln$Sid[ which(strmln$Eid == wellid)])
+  df <- data.frame()
+  for (i in 1:length(sid)){
+    iend <- max(which(strmln$Eid == wellid & strmln$Sid == sid[i]))
+    tmp <- data.frame(strmln[iend,4:6])
+    df <- rbind(df, tmp)
+  }
+  return(df)
+  
+}
   
