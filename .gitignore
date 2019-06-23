@@ -17,3 +17,10 @@
 !/Rwrkspc
 /Rwrkspc/*
 !/Rwrkspc/*.R
+
+!/VSversion/iwfmTrack/iwfmTrack
+/VSversion/iwfmTrack/iwfmTrack/*
+!/VSversion/iwfmTrack/iwfmTrack/*.cpp
+!/VSversion/iwfmTrack/iwfmTrack/*.h
+
+

@@ -775,4 +775,20 @@ iwfm.sourceOutline <- function(wellid, strmln){
   return(df)
   
 }
+
+
+iwfm.writeData<-function(filename, A){
+  if (is.null(dim(A))){
+    nr <- length(A)
+    nc <- 1
+  }
+  else{
+    nr <- dim(A)[1]
+    nc <- dim(A)[2]
+  }
   
+  fprintf("%d %d\n", nr, nc, file = filename, append = FALSE)
+  
+  write(formatC(t(A), format = "f", digits = 11, drop0trailing = TRUE), #format(t(A), nsmall = nsml, digits = 15, justify = "left", scientific = FALSE), 
+        file = filename, ncolumns = nc, append = TRUE)
+}

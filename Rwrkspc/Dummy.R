@@ -114,3 +114,20 @@ p1 <- c(566695.358649, 4413576.717052, 46.243613)
 V1 <- iwfm.pntVel(p1, tp, D$HFLOW, D$VFLOW, D$FI, D$BC, D$MSH, D$XY, D$STRAT, D$HTCF, simTime)
 p2 <- c(566695.808515, 4413575.957847, 46.240942)
 V2 <- iwfm.pntVel(p2, tp, D$HFLOW, D$VFLOW, D$FI, D$BC, D$MSH, D$XY, D$STRAT, D$HTCF, simTime)
+
+
+## Write data to filesfor the C++ implementation
+iwfm.writeData("XYfile.dat",D$XY[,])
+iwfm.writeData("MSHfile.dat",D$MSH[,])
+iwfm.writeData("STRATfile.dat",D$STRAT[,])
+iwfm.writeData("NRMLfile.dat",D$NRML[,])
+iwfm.writeData("FACEZfile.dat",D$FACEZ[,])
+iwfm.writeData("BCfile.dat",D$BC[,])
+iwfm.writeData("BCZfile.dat",D$BCZ[,])
+
+# Average flows and print them to file
+D <- iwfm.AverageVelField(ISOdate(2005,10,31), ISOdate(2015,9,30), D, simTime)
+iwfm.writeData("HFLOWfile.dat",D$HFLOW[,])
+iwfm.writeData("VFLOWfile.dat",D$VFLOW[,])
+
+
