@@ -7,6 +7,9 @@ The code considers particle tracking only in groundwater.
 It is written in c++ using Visual Studio 2017.
 At the moment there is a compiled executable that runs under windows x64.
 
+While there is a working version, the repository is still under development and a bit messy.
+The correct source code for the working version is [here](https://github.com/giorgk/IWFM_track/tree/master/VSversion/iwfmTrack/iwfmTrack)
+
 ## Building iwfmTrack
 The code has very little dependencies.
 In fact it requires only boost geometry and boost tree libraries that are header only.
