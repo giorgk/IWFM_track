@@ -243,7 +243,7 @@ for (i in 1:length(ids)) {
 
 ## Read deep percolation for the layer 1 vertical flow
 # Positive values means downward movement therefore we negate the values as
-# in the particle tracking negative z ccorresponds to downward movement
+# in the particle tracking negative z corresponds to downward movement
 print(paste("reading Vertical flow for layer 1 from: ", hfileDataSets[24]))
 DeepPerc <- GW_BDGinfo[hfileDataSets[24]]
 Vflow <- array(data = 0, dim = c(dim(DeepPerc)[2], dim(DeepPerc)[1], 5))
@@ -263,7 +263,9 @@ for (i in 1:length(ids)) {
   }
 }
 
-# First we have to find out how many element share each node
+# First we have to find out how many elements share each node
+# For the nodal vertical flows positive values mean upward movement
+# therefore there is no need to negate this time
 NsharedElem <- vector(mode = "integer", length = dim(XY)[1])
 for(i in 1:dim(XY)[1]){
   elemlist <- which(MSH[c(-1,-6)] == i, arr.ind = TRUE)
@@ -279,7 +281,7 @@ for (i in 1:dim(MSH)[1]){
     velemflow <- velemflow + vertflowNodes[MSH[i,j],,]/as.numeric(NsharedElem[MSH[i,j]])
   }
   for(j in 1:3){
-    Vflow[i,,j+1] <- -velemflow[,j]*Flow_CNVRT
+    Vflow[i,,j+1] <- velemflow[,j]*Flow_CNVRT
   }
 }
 

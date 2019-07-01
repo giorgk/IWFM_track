@@ -116,7 +116,7 @@ p2 <- c(566695.808515, 4413575.957847, 46.240942)
 V2 <- iwfm.pntVel(p2, tp, D$HFLOW, D$VFLOW, D$FI, D$BC, D$MSH, D$XY, D$STRAT, D$HTCF, simTime)
 
 
-## Write data to filesfor the C++ implementation
+## Write data to files for the C++ implementation
 iwfm.writeData("XYfile.dat",D$XY[,])
 iwfm.writeData("MSHfile.dat",D$MSH[,])
 iwfm.writeData("STRATfile.dat",D$STRAT[,])
