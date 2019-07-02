@@ -235,6 +235,12 @@ public:
 	iwfmMesh(std::string XYfile, std::string MSHfile, std::string STRATfile, double tol);
 	int findElement(double x, double y);
 	bool getPntStrat(double x, double y, std::vector<double> &elev);
+	double getXY(int i, int j);
+	int getMSH(int i, int j);
+	double getZ(int i, int j);
+	int Nnodes();
+	int Nelem();
+	int Nlay();
 
 private:
 	iwfmMatrix2D<double> XY;
@@ -344,4 +350,28 @@ bool iwfmMesh::getPntStrat(double x, double y, std::vector<double> &elev) {
 		}
 		return true;
 	}
+}
+
+double iwfmMesh::getXY(int i, int j) {
+	return XY.get(i, j);
+}
+
+int iwfmMesh::getMSH(int i, int j) {
+	return MSH.get(i, j);
+}
+
+double iwfmMesh::getZ(int i, int j) {
+	return STRAT.get(i, j);
+}
+
+int iwfmMesh::Nnodes() {
+	return XY.nrows();
+}
+
+int iwfmMesh::Nelem() {
+	return MSH.nrows();
+}
+
+int iwfmMesh::Nlay() {
+	return STRAT.ncols();
 }
