@@ -31,6 +31,8 @@ private:
 	std::string outfile;
 	int pntPrec;
 	int velPrec;
+	void writeEndpnts();
+	bool printendpnts;
 };
 
 
@@ -41,6 +43,7 @@ inputWells::inputWells(iwfm_track_options & opt) {
 	outfile = opt.OUTfile;
 	pntPrec = opt.pntPrecision;
 	velPrec = opt.velPrecision;
+	printendpnts = opt.bEndpnts;
 }
 
 void inputWells::readwellFile(std::string filename) {
@@ -104,26 +107,48 @@ void inputWells::distributeParticles(iwfmMesh & MSH) {
 }
 
 void inputWells::WriteStreamlines() {
-	std::cout << "Writing streamlines" << std::endl;
+	if (printendpnts) {
+		writeEndpnts();
+	}
+	else {
+		std::cout << "Writing streamlines" << std::endl;
+		std::ofstream outstream;
+		outstream.open(outfile.c_str());
+
+		outstream << initStreamlines.size() << std::endl;
+		std::vector<streamline>::iterator its;
+		for (its = initStreamlines.begin(); its != initStreamlines.end(); ++its) {
+			outstream << its->Eid << " " << its->Sid << " " << its->exitflag << " " << its->SL.size() << " " << std::endl;
+			for (unsigned int i = 0; i < its->SL.size(); ++i) {
+				outstream << std::setprecision(pntPrec) << std::fixed
+					<< its->SL[i].p.x << " " 
+					<< its->SL[i].p.y << " " 
+					<< its->SL[i].p.z << " " 
+					<< std::setprecision(velPrec) << std::fixed
+					<< its->SL[i].v.x << " " 
+					<< its->SL[i].v.y << " " 
+					<< its->SL[i].v.z << " " 
+					<< its->SL[i].age << std::endl;
+			}
+		}
+		outstream.close();
+	}
+}
+
+void inputWells::writeEndpnts() {
+	std::cout << "Writing Endpoints of streamlines" << std::endl;
 	std::ofstream outstream;
 	outstream.open(outfile.c_str());
 
 	outstream << initStreamlines.size() << std::endl;
 	std::vector<streamline>::iterator its;
 	for (its = initStreamlines.begin(); its != initStreamlines.end(); ++its) {
-		outstream << its->Eid << " " << its->Sid << " " << its->exitflag << " " << its->SL.size() << " " << std::endl;
-		for (unsigned int i = 0; i < its->SL.size(); ++i) {
-			outstream << std::setprecision(pntPrec) << std::fixed
-				<< its->SL[i].p.x << " " 
-				<< its->SL[i].p.y << " " 
-				<< its->SL[i].p.z << " " 
-				<< std::setprecision(velPrec) << std::fixed
-				<< its->SL[i].v.x << " " 
-				<< its->SL[i].v.y << " " 
-				<< its->SL[i].v.z << " " 
-				<< its->SL[i].age << std::endl;
-		}
+		outstream << its->Eid << " " << its->Sid << " " << its->exitflag << " " 
+			<< std::setprecision(pntPrec) << std::fixed
+			<< its->SL.back().p.x << " " 
+			<< its->SL.back().p.y << " " 
+			<< its->SL.back().p.z << " " 
+			<< its->SL.back().age << " " << std::endl;
 	}
-
 	outstream.close();
 }

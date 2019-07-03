@@ -46,6 +46,14 @@ struct streamline {
 	int Sid;
 	std::vector<particle> SL;
 	int exitflag = 0;
+	void calcAge() {
+		if (SL.size() > 1) {
+			double v = SL[SL.size() - 2].v.len();
+			double a = SL[SL.size() - 2].age;
+			double d = (SL[SL.size() - 1].p - SL[SL.size() - 2].p).len();
+			SL[SL.size() - 1].age = a + d / v;
+		}
+	}
 };
 
 
@@ -62,6 +70,7 @@ private:
 	VelocityField		V;
 	iwfmMesh			MSH;
 	iwfm_track_options	opt;
+	double					initstep;
 
 	void traceStreamline(streamline& S);
 
@@ -79,6 +88,7 @@ pTrack::pTrack(VelocityField&	Hin,
 	V(Vin),
 	MSH(MSHin),
 	opt(optin) {
+	initstep = opt.stepSize;
 }
 
 void pTrack::trace(std::vector<streamline>& Streamlines) {
@@ -90,6 +100,7 @@ void pTrack::trace(std::vector<streamline>& Streamlines) {
 
 void pTrack::traceStreamline(streamline& S) {
 	S.SL.at(0);
+	opt.stepSize = initstep;
 	std::cout << "Tracing Eid: " << S.Eid << ", Sid: " << S.Sid << std::endl;
 	int exitflag = isinDomain(S.SL.back());
 	int count_iter = 0;
@@ -98,6 +109,7 @@ void pTrack::traceStreamline(streamline& S) {
 			calcVel(S.SL.back());
 		}
 		S.SL.push_back(findnextpoint(S.SL.back()));
+		S.calcAge();
 		exitflag = isinDomain(S.SL.back());
 
 		count_iter++;
@@ -183,11 +195,6 @@ particle pTrack::findnextpoint(particle p) {
 	else {
 		return findnextpoint(p);
 	}
-
-
-
-
-
 	particle pnext;
 	return pnext;
 }
