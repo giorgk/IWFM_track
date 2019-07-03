@@ -27,4 +27,9 @@
 !/VSversion/iwfmTrack/iwfmTrack/*.cpp
 !/VSversion/iwfmTrack/iwfmTrack/*.h
 
+!/hou
+/hou/*
+!/hou/*.hdanc
+!/hou/*.hipnc
+
 

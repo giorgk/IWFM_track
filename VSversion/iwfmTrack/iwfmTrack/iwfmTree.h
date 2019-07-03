@@ -345,3 +345,27 @@ bool iwfmMesh::getPntStrat(double x, double y, std::vector<double> &elev) {
 		return true;
 	}
 }
+
+double iwfmMesh::getXY(int i, int j) {
+	return XY.get(i, j);
+}
+
+int iwfmMesh::getMSH(int i, int j) {
+	return MSH.get(i, j);
+}
+
+double iwfmMesh::getZ(int i, int j) {
+	return STRAT.get(i, j);
+}
+
+int iwfmMesh::Nnodes() {
+	return XY.nrows();
+}
+
+int iwfmMesh::Nelem() {
+	return MSH.nrows();
+}
+
+int iwfmMesh::Nlay() {
+	return STRAT.ncols();
+}
