@@ -31,5 +31,11 @@
 /hou/*
 !/hou/*.hdanc
 !/hou/*.hipnc
+!/hou/render
+/hou/render/*
+!/hou/render/*.comp
+!/hou/render/*.mov
+
+!/BinaryFiles
 
 
