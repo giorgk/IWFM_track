@@ -24,6 +24,7 @@ public:
 	void WriteStreamlines();
 private:
 	void readwellFile(std::string filename);
+	void readParticleFile(std::string filename);
 	unsigned int Nwells;
 	std::vector<well> Wells;
 	int Npart;
@@ -38,6 +39,7 @@ private:
 
 inputWells::inputWells(iwfm_track_options & opt) {
 	readwellFile(opt.WELLSfile);
+	readParticleFile(opt.PARTICLEfile);
 	Npart = opt.Npart;
 	radius = opt.wellRadius;
 	outfile = opt.OUTfile;
@@ -47,6 +49,8 @@ inputWells::inputWells(iwfm_track_options & opt) {
 }
 
 void inputWells::readwellFile(std::string filename) {
+	if (filename.empty())
+		return;
 
 	std::ifstream datafile(filename.c_str());
 	if (!datafile.good()) {
@@ -70,7 +74,45 @@ void inputWells::readwellFile(std::string filename) {
 		}
 	}
 	datafile.close();
+}
 
+void inputWells::readParticleFile(std::string filename) {
+	if (filename.empty())
+		return;
+
+	std::ifstream datafile(filename.c_str());
+	if (!datafile.good()) {
+		std::cout << "Can't open the file" << filename << std::endl;
+	}
+	else {
+		int Nparticles;
+		double x, y, z;
+		int Eid, Sid;
+		char buffer[1024];
+		datafile.getline(buffer, 1024);
+		std::istringstream inp(buffer);
+		inp >> Nparticles;
+		for (unsigned int i = 0; i < Nparticles; ++i) {
+			datafile.getline(buffer, 1024);
+			std::istringstream inp(buffer);
+			inp >> Eid;
+			inp >> Sid;
+			inp >> x;
+			inp >> y;
+			inp >> z;
+			streamline s;
+			s.Eid = Eid;
+			s.Sid = Sid;
+			vec3D pos;
+			pos.x = x;
+			pos.y = y;
+			pos.z = z;
+			particle p;
+			p.p = pos;
+			s.SL.push_back(p);
+			initStreamlines.push_back(s);
+		}
+	}
 }
 
 void inputWells::distributeParticles(iwfmMesh & MSH) {

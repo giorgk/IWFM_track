@@ -20,6 +20,7 @@ struct iwfm_track_options {
 	int Nsearch;
 	int dir;
 	std::string WELLSfile;
+	std::string PARTICLEfile;
 	std::string OUTfile;
 	int Npart;
 	bool bEndpnts;
@@ -59,8 +60,9 @@ bool readInputParameters(int argc, char *argv[], iwfm_track_options& iwtropt) {
 		("VFLOW", "Vertical flow values")
 		("BC", "Element barycenters")
 		("BCZ", "Element barycenters elevation")
-		("WELLS", "Well information")
 		("OUTFILE", "Output file")
+		("WELLS", po::value<std::string>()->default_value(""), "Well information")
+		("PARTICLES", po::value<std::string>()->default_value(""), "Initial location of particles")
 		("RADIUS", po::value<double>()->default_value(3000.0), "Search radius during interpolation")
 		("NSEARCH", po::value<int>()->default_value(20), "Number of search closest points ")
 		("NMINPNTS", po::value<int>()->default_value(4), "Minimum number of points")
@@ -87,7 +89,7 @@ bool readInputParameters(int argc, char *argv[], iwfm_track_options& iwtropt) {
 	if (vm.count("version")) {
 		std::cout << "|------------------|" << std::endl;
 		std::cout << "|    IWFM Trace    |" << std::endl;
-		std::cout << "| Version : 0.0.03 |" << std::endl;
+		std::cout << "| Version : 0.0.04 |" << std::endl;
 		std::cout << "|    by  giorgk    |" << std::endl;
 		std::cout << "|------------------|" << std::endl;
 		return false;
@@ -168,14 +170,6 @@ bool readInputParameters(int argc, char *argv[], iwfm_track_options& iwtropt) {
 			tf = false;
 		}
 
-		if (vm1.count("WELLS")) {
-			iwtropt.WELLSfile = vm1["WELLS"].as<std::string>();
-		}
-		else {
-			std::cout << "WELLS option is missing" << std::endl;
-			tf = false;
-		}
-
 		if (vm1.count("OUTFILE")) {
 			iwtropt.OUTfile = vm1["OUTFILE"].as<std::string>();
 		}
@@ -185,6 +179,8 @@ bool readInputParameters(int argc, char *argv[], iwfm_track_options& iwtropt) {
 		}
 
 		// Options with default values
+		iwtropt.WELLSfile = vm1["WELLS"].as<std::string>();
+		iwtropt.PARTICLEfile = vm1["PARTICLES"].as<std::string>();
 		iwtropt.radius = vm1["RADIUS"].as<double>();
 		iwtropt.Nminp = vm1["NMINPNTS"].as<int>();
 		iwtropt.Nsearch = vm1["NSEARCH"].as<int>();
