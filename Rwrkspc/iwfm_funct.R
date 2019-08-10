@@ -764,6 +764,23 @@ iwfm.AverageVelField <- function(startDate, endDate, D, simTime){
   return(D)
 }
 
+iwfm.AverageVelField_IDS <-function(IDS, D){
+  maxid <- length(iwfm.SimTime())
+  if (all(IDS > 1 & IDS < maxid)){
+    HF <- matrix(data = NA, nrow = dim(D$HFLOW)[1], ncol = 4)
+    VF <- matrix(data = NA, nrow = dim(D$VFLOW)[1], ncol = 4)
+    for (i in 1:4) {
+      HF[,i] <- apply(D$HFLOW[,IDS,i],1,mean)
+      VF[,i] <- apply(D$VFLOW[,IDS,i],1,mean)
+    }
+    D$HFLOW <- HF
+    D$VFLOW <- VF
+  }else{
+    print("Invalid range of IDS. Nothing is Averaged")
+  }
+  return(D)
+}
+
 iwfm.sourceOutline <- function(wellid, strmln){
   sid <- unique(strmln$Sid[ which(strmln$Eid == wellid)])
   df <- data.frame()

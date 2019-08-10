@@ -63,6 +63,14 @@ iwfm.writeData("HFLOWfile.dat",D$HFLOW[,])
 iwfm.writeData("VFLOWfile.dat",D$VFLOW[,])
 ```
 
+Another possibility is to use selected months instead of a range. 
+First examine the output of the `iwfm.SimTime()` and decide which ids you should use.
+For example to average the values of all April months from 2005 to 2015 do the following
+```
+IDS <- seq(from=379, to=499, by=12)
+D <- iwfm.AverageVelField_IDS(IDS, D)
+``` 
+
 ## Run particle tracking
 To run the particle tracking one need to prepare a configuration file with the following options:
 ```
