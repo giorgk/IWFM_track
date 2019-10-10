@@ -92,7 +92,7 @@ void inputWells::readParticleFile(std::string filename) {
 		datafile.getline(buffer, 1024);
 		std::istringstream inp(buffer);
 		inp >> Nparticles;
-		for (unsigned int i = 0; i < Nparticles; ++i) {
+		for (int i = 0; i < Nparticles; ++i) {
 			datafile.getline(buffer, 1024);
 			std::istringstream inp(buffer);
 			inp >> Eid;

@@ -2,7 +2,10 @@
 //
 
 #include "pch.h"
+#include <functional>
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 #include "iwfmOptions.h"
 #include "iwfmReader.h"
@@ -26,7 +29,24 @@ int main(int argc, char *argv[])
 
 	pTrack pt(HF, VF, MSH, iwfm_opt);
 
-	pt.trace(wells.initStreamlines);
+	auto start = std::chrono::high_resolution_clock::now();
+
+	bool bThreaded = iwfm_opt.nThreads > 0;
+	if (bThreaded) {
+		std::vector<std::thread> T;
+		for (int i = 0; i < iwfm_opt.nThreads; ++i) {
+			T.push_back(std::thread(&pTrack::trace_with_threads, std::ref(pt), i, std::ref(wells.initStreamlines)));
+		}
+		for (int i = 0; i < iwfm_opt.nThreads; ++i) {
+			T[i].join();
+		}
+	}
+	else {
+		pt.trace(wells.initStreamlines);
+	}
+	auto finish = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed = finish - start;
+	std::cout << "Particle tracking finished in " << elapsed.count() << std::endl;
 
 	wells.WriteStreamlines();
 

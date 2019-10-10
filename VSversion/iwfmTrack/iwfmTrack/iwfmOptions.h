@@ -33,6 +33,7 @@ struct iwfm_track_options {
 	double tolStepSize;
 	int pntPrecision;
 	int velPrecision;
+	int nThreads;
 };
 
 
@@ -78,6 +79,7 @@ bool readInputParameters(int argc, char *argv[], iwfm_track_options& iwtropt) {
 		("TOLSTEPSIZE", po::value<double>()->default_value(1), "Tolerance of particle tracking")
 		("PNTPRECISION", po::value<int>()->default_value(3), "Number of decimals in printing for points and age")
 		("VELPRECISION", po::value<int>()->default_value(5), "Number of decimals in printing for velocity")
+		("NTHREADS", po::value<int>()->default_value(6), "Number of threads")
 		;
 	po::variables_map vm1;
 
@@ -196,6 +198,7 @@ bool readInputParameters(int argc, char *argv[], iwfm_track_options& iwtropt) {
 		iwtropt.tolStepSize = vm1["TOLSTEPSIZE"].as<double>(); 
 		iwtropt.pntPrecision = vm1["PNTPRECISION"].as<int>();
 		iwtropt.velPrecision = vm1["VELPRECISION"].as<int>();
+		iwtropt.nThreads = vm1["NTHREADS"].as<int>();
 		if (!tf) {
 			std::cout << "IWFM Trace requires a configuration file with the following options:" << std::endl;
 			std::cout << config_opt << std::endl;

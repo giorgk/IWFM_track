@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+
+
 #include "iwfmTree.h"
 #include "iwfmOptions.h"
 
@@ -64,6 +66,7 @@ public:
 		iwfmMesh&			MSHin,
 		iwfm_track_options&	optin);
 	void trace(std::vector<streamline>& Streamlines);
+	void trace_with_threads(int idThread, std::vector<streamline>& Streamlines);
 
 private:
 	VelocityField		H;
@@ -96,6 +99,36 @@ void pTrack::trace(std::vector<streamline>& Streamlines) {
 	for (its = Streamlines.begin(); its != Streamlines.end(); ++its) {
 		traceStreamline(*its);
 	}
+}
+
+void pTrack::trace_with_threads(int idThread, std::vector<streamline>& Streamlines) {
+	for (int i = idThread; i < static_cast<int>(Streamlines.size()); i = i + opt.nThreads) {
+		traceStreamline(Streamlines[i]);
+	}
+	/*
+	int nParticles = static_cast<int>(Streamlines.size());
+	int startParticle, endParticle;
+	if (nParticles < opt.nThreads) {
+		if (idThread > 0)
+			return;
+		else {
+			startParticle = 0;
+			endParticle = nParticles;
+		}
+	}
+	else {
+		int nParticles2calc = nParticles / opt.nThreads;
+		startParticle = idThread * nParticles2calc;
+		endParticle = (idThread + 1) * nParticles2calc;
+		if (idThread == opt.nThreads - 1)
+			endParticle = nParticles;
+	}
+	for (int i = startParticle; i < endParticle; ++i) {
+		
+	}
+	*/
+
+	std::cout << "This is thread with id " << idThread << std::endl;
 }
 
 void pTrack::traceStreamline(streamline& S) {
