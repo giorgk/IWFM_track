@@ -128,13 +128,13 @@ void pTrack::trace_with_threads(int idThread, std::vector<streamline>& Streamlin
 	}
 	*/
 
-	std::cout << "This is thread with id " << idThread << std::endl;
+	//std::cout << "This is thread with id " << idThread << std::endl;
 }
 
 void pTrack::traceStreamline(streamline& S) {
 	S.SL.at(0);
 	opt.stepSize = initstep;
-	std::cout << "Tracing Eid: " << S.Eid << ", Sid: " << S.Sid << std::endl;
+	//std::cout << "Tracing Eid: " << S.Eid << ", Sid: " << S.Sid << std::endl;
 	int exitflag = isinDomain(S.SL.back());
 	int count_iter = 0;
 	while (exitflag == 0) {
